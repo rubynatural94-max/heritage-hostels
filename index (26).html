@@ -1,0 +1,935 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GeoNest — Student accommodation near Heritage Polytechnic</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#F6F3EC;--bg-elevated:#FFFFFF;--ink:#21231F;--ink-soft:#55564F;--ink-faint:#8A8677;
+  --primary:#2F5233;--primary-dark:#1D341F;--primary-tint:#E4EBE0;
+  --accent:#C1440E;--accent-tint:#F6E3D6;--line:#DDD5C4;
+  --radius:10px;--radius-sm:6px;
+  --shadow-card:0 1px 2px rgba(33,35,31,.04),0 4px 16px rgba(33,35,31,.06);
+  --shadow-lift:0 8px 28px rgba(33,35,31,.14);
+  --font-display:'Fraunces',Georgia,serif;--font-body:'Inter',-apple-system,sans-serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);line-height:1.55;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer}
+ul{list-style:none}:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+.hidden{display:none !important}
+.nav{position:sticky;top:0;z-index:50;background:rgba(246,243,236,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;max-width:1160px;margin:0 auto;position:relative}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;font-size:1.2rem}
+.brand-mark{width:28px;height:28px;border-radius:8px;background:var(--primary);position:relative;flex-shrink:0}
+.brand-mark::after{content:'';position:absolute;left:50%;top:46%;width:8px;height:8px;border-radius:50% 50% 50% 0;background:var(--accent);transform:translate(-50%,-55%) rotate(-45deg)}
+.nav-links{display:flex;gap:22px;align-items:center}
+.nav-links a{font-size:.9rem;font-weight:500;color:var(--ink-soft)}
+.nav-links a:hover{color:var(--ink)}
+.nav-cta{background:var(--primary);color:#fff !important;padding:9px 16px;border-radius:100px;font-weight:600;font-size:.85rem}
+.nav-cta:hover{background:var(--primary-dark)}
+.section{padding:44px 0}
+.hero{padding:48px 0 24px}
+.hero-inner{max-width:1160px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);background:var(--primary-tint);padding:6px 12px;border-radius:100px;margin-bottom:16px}
+.eyebrow::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.hero h1{font-family:var(--font-display);font-size:clamp(1.9rem,4vw,2.9rem);line-height:1.08;font-weight:600;letter-spacing:-.02em;margin-bottom:16px}
+.hero h1 em{font-style:italic;color:var(--primary)}
+.hero p.lede{color:var(--ink-soft);max-width:46ch;margin-bottom:22px}
+.search-card{background:var(--bg-elevated);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-card);display:grid;gap:10px}
+.search-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field label{display:block;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);margin-bottom:5px}
+.field input,.field select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--bg);font-family:inherit;font-size:.9rem;color:var(--ink)}
+.field input:focus,.field select:focus{border-color:var(--primary);outline:none}
+.btn-primary{background:var(--accent);color:#fff;border:none;padding:12px 18px;border-radius:var(--radius-sm);font-weight:600;font-size:.92rem}
+.btn-primary:hover{background:#A63A0C}
+.btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink);padding:11px 16px;border-radius:var(--radius-sm);font-weight:600;font-size:.88rem}
+.btn-ghost:hover{border-color:var(--primary);color:var(--primary)}
+.pin-hero{position:relative;aspect-ratio:1/1;border-radius:16px;background:var(--primary);overflow:hidden;box-shadow:var(--shadow-lift)}
+.pin-hero svg{width:100%;height:100%}
+.pin-hero .g{stroke:rgba(255,255,255,.09)}.pin-hero .bl{fill:rgba(255,255,255,.06)}
+.pin-hero .p{transform-origin:bottom center;animation:drop .6s cubic-bezier(.34,1.56,.64,1) backwards}
+.pin-hero .sh{fill:rgba(0,0,0,.25);animation:sh .6s ease backwards}
+@keyframes drop{0%{transform:translateY(-40px) scale(.6);opacity:0}60%{transform:translateY(2px) scale(1.05);opacity:1}100%{transform:translateY(0) scale(1)}}
+@keyframes sh{0%{opacity:0;transform:scaleX(.3)}100%{opacity:1;transform:scaleX(1)}}
+.pin-hero figcaption{position:absolute;bottom:14px;left:14px;right:14px;font-family:var(--font-mono);font-size:.68rem;color:rgba(255,255,255,.75);display:flex;justify-content:space-between}
+.section-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:22px;gap:16px;flex-wrap:wrap}
+.section-head h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.3rem,3vw,1.8rem)}
+.section-head p{color:var(--ink-soft);font-size:.92rem}
+.filter-bar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:20px}
+.chip{padding:8px 15px;border-radius:100px;border:1px solid var(--line);background:var(--bg-elevated);font-size:.83rem;font-weight:500;color:var(--ink-soft)}
+.chip:hover{border-color:var(--primary)}
+.chip.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.explore{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+#map{height:560px;border-radius:var(--radius);border:1px solid var(--line);position:sticky;top:80px}
+.listing-list{display:grid;gap:12px;max-height:560px;overflow-y:auto;padding-right:4px}
+.card{background:var(--bg-elevated);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-card);cursor:pointer}
+.card:hover{box-shadow:var(--shadow-lift)}
+.card-media{height:140px;background:var(--primary-tint);display:flex;align-items:center;justify-content:center;color:var(--primary);font-family:var(--font-mono);font-size:.72rem}
+.card-media img{width:100%;height:100%;object-fit:cover}
+.card-body{padding:13px 15px}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:5px}
+.card h3{font-family:var(--font-display);font-size:1rem;font-weight:600}
+.price{font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--accent);white-space:nowrap;text-align:right}
+.meta{font-size:.8rem;color:var(--ink-soft);display:flex;gap:8px;flex-wrap:wrap;margin-top:7px}
+.tag{font-size:.7rem;font-family:var(--font-mono);padding:3px 7px;border-radius:4px;background:var(--bg);color:var(--ink-faint);border:1px solid var(--line)}
+.dist-tag{background:var(--accent-tint);color:var(--accent);border:none}
+.card.highlighted{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-tint)}
+.empty-state{text-align:center;padding:40px 16px;color:var(--ink-faint)}
+.empty-state .glyph{font-family:var(--font-display);font-size:1.8rem;color:var(--line);margin-bottom:6px}
+.form-card{background:var(--bg-elevated);border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-card);max-width:540px}
+.form-grid{display:grid;gap:14px}
+.form-grid .row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-grid label{display:block;font-size:.78rem;font-weight:600;margin-bottom:5px;color:var(--ink-soft)}
+.admin-table{width:100%;border-collapse:collapse;margin-top:20px}
+.admin-table th,.admin-table td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);font-size:.86rem}
+.admin-table th{color:var(--ink-faint);font-weight:600;font-size:.72rem;text-transform:uppercase}
+.icon-btn{background:none;border:1px solid var(--line);padding:6px 10px;border-radius:6px;font-size:.76rem;margin-right:5px}
+.icon-btn.danger{color:var(--accent);border-color:var(--accent-tint)}
+.banner{padding:11px 15px;border-radius:var(--radius-sm);font-size:.86rem;margin-bottom:14px}
+.banner.error{background:var(--accent-tint);color:#7A2A08}
+.banner.success{background:var(--primary-tint);color:var(--primary-dark)}
+.detail-layout{display:grid;grid-template-columns:1.3fr 1fr;gap:32px;align-items:start}
+.detail-gallery{height:300px;border-radius:var(--radius);background:var(--primary-tint);display:flex;align-items:center;justify-content:center;color:var(--primary);font-family:var(--font-mono);margin-bottom:18px;overflow:hidden}
+.detail-gallery img{width:100%;height:100%;object-fit:cover}
+.detail-title{font-family:var(--font-display);font-size:1.9rem;font-weight:600;margin-bottom:6px}
+.detail-price{font-family:var(--font-mono);color:var(--accent);font-size:1.15rem;font-weight:600;margin-bottom:14px}
+.detail-meta{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:18px}
+.amenity-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0 22px}
+.amenity-grid li{padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius-sm);font-size:.86rem;display:flex;align-items:center;gap:8px}
+.amenity-grid li::before{content:'✓';color:var(--primary);font-weight:700}
+.detail-side{position:sticky;top:80px}
+#detail-map{height:240px;border-radius:var(--radius);border:1px solid var(--line);margin-bottom:14px}
+.contact-card{background:var(--bg-elevated);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow-card)}
+.star-row span{cursor:pointer}
+.site-footer{border-top:1px solid var(--line);padding:34px 0 24px;margin-top:30px}
+.footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px}
+.footer-inner p{color:var(--ink-faint);font-size:.84rem}
+.footer-links{display:flex;gap:18px}
+.footer-links a{font-size:.84rem;color:var(--ink-soft)}
+@media (max-width:860px){
+  .hero-inner{grid-template-columns:1fr}.explore{grid-template-columns:1fr}
+  #map{position:static;height:300px;order:-1}.search-row{grid-template-columns:1fr}
+  .detail-layout{grid-template-columns:1fr}.detail-side{position:static}
+  #menu-toggle{display:block !important}
+  .nav-links{
+    display:none;position:absolute;top:100%;left:0;right:0;
+    flex-direction:column;align-items:stretch;gap:0;
+    background:var(--bg-elevated);border-bottom:1px solid var(--line);
+    box-shadow:var(--shadow-lift);padding:8px 20px 16px;
+  }
+  .nav-links.open{display:flex}
+  .nav-links a{padding:13px 4px;border-bottom:1px solid var(--line);font-size:1rem}
+  .nav-links a:last-child{border-bottom:none}
+  .nav-links .nav-cta{margin-top:10px;text-align:center;padding:13px 4px;border-radius:var(--radius-sm)}
+  .form-grid .row-2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav"><div class="nav-inner">
+  <a href="#home" class="brand"><span class="brand-mark"></span>GeoNest</a>
+  <button id="menu-toggle" aria-label="Open menu" style="display:none;background:none;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:1.1rem;line-height:1">☰</button>
+  <div class="nav-links" id="nav-links"></div>
+</div></nav>
+
+<!-- ===================== HOME VIEW ===================== -->
+<div id="view-home">
+  <header class="hero"><div class="hero-inner">
+    <div>
+      <span class="eyebrow">Ikot Udota · Eket · Akwa Ibom</span>
+      <h1>Find accommodation near campus, <em>not just near a map pin.</em></h1>
+      <p class="lede">Discover verified accommodation around Ikot Udota, Eket — search by budget, room type, and availability, and see exactly how far each place is from Heritage Polytechnic on an interactive map.</p>
+      <form class="search-card" id="search-form">
+        <div class="search-row">
+          <div class="field"><label>Search</label><input type="text" id="q" placeholder="e.g. self-contained, Palm Avenue…" /></div>
+          <div class="field"><label>Room type</label><select id="type"><option value="">Any type</option><option>Self-contained</option><option>Shared room</option><option>1 Bedroom flat</option><option>Dormitory</option></select></div>
+        </div>
+        <div class="search-row">
+          <div class="field"><label>Max budget (₦ / session)</label><input type="number" id="budget" placeholder="e.g. 100000" min="0" step="5000" /></div>
+          <div class="field"><label>Preference</label><select id="gender"><option value="">Any</option><option>Male</option><option>Female</option><option>Mixed</option></select></div>
+        </div>
+        <button type="submit" class="btn-primary">Search accommodation</button>
+      </form>
+    </div>
+    <figure class="pin-hero" aria-hidden="true">
+      <svg viewBox="0 0 320 320">
+        <line class="g" x1="0" y1="80" x2="320" y2="80"/><line class="g" x1="0" y1="160" x2="320" y2="160"/><line class="g" x1="0" y1="240" x2="320" y2="240"/>
+        <line class="g" x1="80" y1="0" x2="80" y2="320"/><line class="g" x1="160" y1="0" x2="160" y2="320"/><line class="g" x1="240" y1="0" x2="240" y2="320"/>
+        <rect class="bl" x="90" y="10" width="60" height="60" rx="4"/><rect class="bl" x="170" y="90" width="60" height="60" rx="4"/>
+        <rect class="bl" x="10" y="170" width="60" height="60" rx="4"/><rect class="bl" x="250" y="170" width="55" height="55" rx="4"/><rect class="bl" x="90" y="250" width="60" height="55" rx="4"/>
+        <ellipse class="sh" cx="160" cy="163" rx="10" ry="3" style="animation-delay:.1s"/>
+        <path class="p" d="M160 120C148 120 138 130 138 142C138 158 160 178 160 178C160 178 182 158 182 142C182 130 172 120 160 120Z" fill="#fff" style="animation-delay:.1s"/>
+        <circle class="p" cx="160" cy="141" r="7" fill="#2F5233" style="animation-delay:.1s"/>
+        <ellipse class="sh" cx="95" cy="203" rx="8" ry="2.5" style="animation-delay:.28s"/>
+        <path class="p" d="M95 172C85 172 77 180 77 190C77 203 95 219 95 219C95 219 113 203 113 190C113 180 105 172 95 172Z" fill="#C1440E" style="animation-delay:.28s"/>
+        <ellipse class="sh" cx="228" cy="143" rx="8" ry="2.5" style="animation-delay:.42s"/>
+        <path class="p" d="M228 112C218 112 210 120 210 130C210 143 228 159 228 159C228 159 246 143 246 130C246 120 238 112 228 112Z" fill="#C1440E" style="animation-delay:.42s"/>
+        <ellipse class="sh" cx="60" cy="263" rx="8" ry="2.5" style="animation-delay:.56s"/>
+        <path class="p" d="M60 232C50 232 42 240 42 250C42 263 60 279 60 279C60 279 78 263 78 250C78 240 70 232 60 232Z" fill="#C1440E" style="animation-delay:.56s"/>
+      </svg>
+      <figcaption><span>HERITAGE POLY · CAMPUS</span><span id="pin-count">Loading…</span></figcaption>
+    </figure>
+  </div></header>
+
+  <main class="wrap section">
+    <div class="section-head"><h2>Explore listings</h2><p id="result-count">Showing all accommodation near campus</p></div>
+    <div class="filter-bar" id="filter-bar">
+      <button class="chip active" data-sort="distance">Nearest first</button>
+      <button class="chip" data-sort="price-asc">Cheapest first</button>
+      <button class="chip" data-sort="price-desc">Priciest first</button>
+    </div>
+    <div class="explore">
+      <div id="map"></div>
+      <div class="listing-list" id="listing-list"><div class="empty-state"><div class="glyph">…</div>Loading listings</div></div>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== LISTING DETAIL VIEW ===================== -->
+<div id="view-listing" class="hidden"><main class="wrap section" id="listing-content"></main></div>
+
+<!-- ===================== LOGIN / REGISTER VIEW ===================== -->
+<div id="view-login" class="hidden">
+  <main class="wrap section" style="max-width:900px">
+    <div class="section-head"><h2>Join GeoNest</h2><p>Students search for free. Agents list rooms once verified by an admin.</p></div>
+    <div id="auth-banner"></div>
+    <div class="filter-bar" id="tab-bar">
+      <button class="chip active" data-tab="login">Sign in</button>
+      <button class="chip" data-tab="student">Register as student</button>
+      <button class="chip" data-tab="agent">Register as agent</button>
+    </div>
+    <form class="form-card" id="login-form" data-panel="login">
+      <div class="form-grid">
+        <div><label>Email address</label><input type="email" id="login-email" required /></div>
+        <div><label>Password</label><input type="password" id="login-password" required /></div>
+        <button type="submit" class="btn-primary">Sign in</button>
+      </div>
+    </form>
+    <form class="form-card" id="student-form" data-panel="student" hidden>
+      <div class="form-grid">
+        <div class="row-2">
+          <div><label>Full name</label><input type="text" id="s-name" required /></div>
+          <div><label>Matric / Reg number</label><input type="text" id="s-matric" placeholder="e.g. 24161061" required /></div>
+        </div>
+        <div><label>Email address</label><input type="email" id="s-email" required /></div>
+        <div><label>Password</label><input type="password" id="s-password" minlength="6" required /></div>
+        <button type="submit" class="btn-primary">Create student account</button>
+      </div>
+    </form>
+    <form class="form-card" id="agent-form" data-panel="agent" hidden>
+      <div class="form-grid">
+        <div class="row-2">
+          <div><label>Full name</label><input type="text" id="a-name" required /></div>
+          <div><label>Phone number</label><input type="tel" id="a-phone" required /></div>
+        </div>
+        <div><label>Company / house name (optional)</label><input type="text" id="a-company" /></div>
+        <div><label>Email address</label><input type="email" id="a-email" required /></div>
+        <div><label>Password</label><input type="password" id="a-password" minlength="6" required /></div>
+        <div><label>Utility bill (proof of address) — image or PDF</label><input type="file" id="a-bill" accept=".pdf,.jpg,.jpeg,.png" required /></div>
+        <p style="font-size:.8rem;color:var(--ink-faint)">Your account stays "pending" until an admin reviews your document. You can sign in immediately, but listings won't show publicly until you're verified.</p>
+        <button type="submit" class="btn-primary">Create agent account</button>
+      </div>
+    </form>
+  </main>
+</div>
+
+<!-- ===================== AGENT PORTAL VIEW ===================== -->
+<div id="view-agent" class="hidden">
+  <main class="wrap section">
+    <div class="section-head"><h2>Agent portal</h2><p id="verify-status">Checking your verification status…</p></div>
+    <div id="agent-banner"></div>
+    <div class="section-head"><h2 style="font-size:1.1rem">Add a listing</h2></div>
+    <form class="form-card" id="listing-form" style="max-width:700px;margin-bottom:36px">
+      <div class="form-grid">
+        <input type="hidden" id="editing-id" />
+        <div class="row-2">
+          <div><label>Accommodation name</label><input type="text" id="l-title" required /></div>
+          <div><label>Price per session (₦)</label><input type="number" id="l-price" min="0" step="1000" required /></div>
+        </div>
+        <div class="row-2">
+          <div><label>Room type</label><select id="l-type" required><option>Self-contained</option><option>Shared room</option><option>1 Bedroom flat</option><option>Dormitory</option></select></div>
+          <div><label>Gender preference</label><select id="l-gender" required><option>Mixed</option><option>Male</option><option>Female</option></select></div>
+        </div>
+        <div><label>Availability</label><select id="l-availability" required><option value="available">Available</option><option value="occupied">Occupied</option></select></div>
+        <div><label>Address</label><input type="text" id="l-address" placeholder="e.g. Off Eket-Oron Road, Ikot Udota" required /></div>
+        <div class="row-2">
+          <div><label>Latitude</label><input type="number" step="0.0001" id="l-lat" placeholder="4.6580" required /></div>
+          <div><label>Longitude</label><input type="number" step="0.0001" id="l-lng" placeholder="7.9760" required /></div>
+        </div>
+        <p style="font-size:.78rem;color:var(--ink-faint);margin-top:-8px">Tap the map to auto-fill coordinates.</p>
+        <div id="pin-map" style="height:200px;border-radius:var(--radius);border:1px solid var(--line)"></div>
+        <div><label>Amenities (comma separated)</label><input type="text" id="l-amenities" placeholder="Water supply, Fenced compound, Wi-Fi" /></div>
+        <div><label>Description</label><textarea id="l-desc" style="min-height:80px"></textarea></div>
+        <div><label>Photos</label><input type="file" id="l-photos" accept="image/*" multiple /></div>
+        <div class="row-2">
+          <button type="submit" class="btn-primary" id="save-btn">Save listing</button>
+          <button type="button" class="btn-ghost" id="cancel-edit" hidden>Cancel edit</button>
+        </div>
+      </div>
+    </form>
+    <div class="section-head"><h2 style="font-size:1.1rem">My listings</h2></div>
+    <table class="admin-table"><thead><tr><th>Name</th><th>Price</th><th>Status</th><th>Availability</th><th>Distance</th><th>Actions</th></tr></thead>
+    <tbody id="agent-listings-body"><tr><td colspan="6">Loading…</td></tr></tbody></table>
+  </main>
+</div>
+
+<!-- ===================== ABOUT VIEW ===================== -->
+<div id="view-about" class="hidden">
+  <header class="wrap" style="padding:48px 0 24px">
+    <span class="eyebrow">ND2 · Computer Science</span>
+    <h1 style="font-family:var(--font-display);font-size:clamp(1.6rem,4vw,2.4rem);max-width:20ch">Design and Implementation of an Accommodation Finder with Geo-location Mapping</h1>
+    <p style="color:var(--ink-soft);max-width:60ch;margin-top:10px">GeoNest helps Heritage Polytechnic students discover and reserve verified accommodation around Ikot Udota, Eket. Agents list verified rooms with exact coordinates and live availability, students filter by budget, distance to campus, and ratings on an interactive map, and an admin layer keeps listings and agents accountable.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:26px" id="about-grid-wrap">
+      <div>
+        <h3 style="font-family:var(--font-display);margin-bottom:12px">Project details</h3>
+        <div style="display:grid;gap:12px">
+          <div style="display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding-bottom:8px"><span style="color:var(--ink-faint);font-size:.85rem">Student</span><span style="font-weight:600;font-family:var(--font-mono);font-size:.88rem">Udosen, Enwongoabasi David</span></div>
+          <div style="display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding-bottom:8px"><span style="color:var(--ink-faint);font-size:.85rem">Reg. No.</span><span style="font-weight:600;font-family:var(--font-mono);font-size:.88rem">24161061</span></div>
+          <div style="display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding-bottom:8px"><span style="color:var(--ink-faint);font-size:.85rem">Level</span><span style="font-weight:600;font-family:var(--font-mono);font-size:.88rem">ND2</span></div>
+          <div style="display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding-bottom:8px"><span style="color:var(--ink-faint);font-size:.85rem">Institution</span><span style="font-weight:600;font-family:var(--font-mono);font-size:.88rem">Heritage Polytechnic, Eket</span></div>
+        </div>
+      </div>
+      <div>
+        <h3 style="font-family:var(--font-display);margin-bottom:12px">Built with</h3>
+        <div style="display:grid;gap:12px">
+          <div style="display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding-bottom:8px"><span style="color:var(--ink-faint);font-size:.85rem">Mapping</span><span style="font-weight:600;font-family:var(--font-mono);font-size:.88rem">Leaflet + OpenStreetMap</span></div>
+          <div style="display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding-bottom:8px"><span style="color:var(--ink-faint);font-size:.85rem">Auth &amp; database</span><span style="font-weight:600;font-family:var(--font-mono);font-size:.88rem">Firebase Auth + Firestore</span></div>
+          <div style="display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding-bottom:8px"><span style="color:var(--ink-faint);font-size:.85rem">File storage</span><span style="font-weight:600;font-family:var(--font-mono);font-size:.88rem">Cloudinary</span></div>
+          <div style="display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding-bottom:8px"><span style="color:var(--ink-faint);font-size:.85rem">Cost</span><span style="font-weight:600;font-family:var(--font-mono);font-size:.88rem">₦0 — free tier only</span></div>
+        </div>
+      </div>
+    </div>
+  </header>
+</div>
+
+<!-- ===================== MY BOOKINGS VIEW (students) ===================== -->
+<div id="view-bookings" class="hidden">
+  <main class="wrap section">
+    <div class="section-head"><h2>My bookings</h2><p>Accommodation you've reserved through GeoNest.</p></div>
+    <div id="bookings-content" style="display:grid;gap:12px"><p>Loading…</p></div>
+  </main>
+</div>
+
+<footer class="site-footer"><div class="wrap footer-inner">
+  <p>GeoNest — ND2 project, Heritage Polytechnic, Eket.</p>
+  <div class="footer-links"><a href="#about">About this project</a><a href="#login">Sign in</a></div>
+</div></footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { getFirestore, collection, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+
+/* ---------- Firebase config (already filled in) ---------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyB88V6ssglafRlb-839iASRnA75yUFbbZ0",
+  authDomain: "heritage-hostels.firebaseapp.com",
+  projectId: "heritage-hostels",
+  storageBucket: "heritage-hostels.firebasestorage.app",
+  messagingSenderId: "240079874951",
+  appId: "1:240079874951:web:755656ec8b8d33ddb10122"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+/* ---------- Cloudinary config (already filled in) ---------- */
+const CLOUD_NAME = 'ma1wzby1';
+const UPLOAD_PRESET = 'hostel_uploads';
+async function uploadToCloudinary(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', UPLOAD_PRESET);
+  const isPdf = file.type === 'application/pdf';
+  const endpoint = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${isPdf ? 'raw' : 'image'}/upload`;
+  const res = await fetch(endpoint, { method: 'POST', body: formData });
+  if (!res.ok) throw new Error('Upload failed. Check Cloudinary preset is Unsigned.');
+  const data = await res.json();
+  return data.secure_url;
+}
+async function uploadMultiple(files) {
+  const urls = [];
+  for (const f of files) urls.push(await uploadToCloudinary(f));
+  return urls;
+}
+
+/* ---------- Campus + distance ---------- */
+const CAMPUS = { name: 'Heritage Polytechnic, Ikot Udota, Eket', lat: 4.6567, lng: 7.9759 };
+function distanceKm(lat1,lng1,lat2,lng2){
+  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function withDistance(l){ return {...l, distanceKm: Number(distanceKm(CAMPUS.lat,CAMPUS.lng,l.lat,l.lng).toFixed(2))}; }
+
+/* ---------- Auth ---------- */
+async function registerStudent({name,email,password,matricNumber}){
+  const cred = await createUserWithEmailAndPassword(auth,email,password);
+  await setDoc(doc(db,'users',cred.user.uid),{name,email,matricNumber,role:'student',createdAt:serverTimestamp()});
+  return cred.user;
+}
+async function registerAgent({name,email,password,phone,company,billFile}){
+  const cred = await createUserWithEmailAndPassword(auth,email,password);
+  let billUrl = null;
+  if (billFile) billUrl = await uploadToCloudinary(billFile);
+  await setDoc(doc(db,'users',cred.user.uid),{name,email,phone,company:company||'',role:'agent',verified:false,billUrl,createdAt:serverTimestamp()});
+  return cred.user;
+}
+async function loginUser(email,password){
+  const cred = await signInWithEmailAndPassword(auth,email,password);
+  const profile = await getUserProfile(cred.user.uid);
+  if(profile?.suspended){
+    await signOut(auth);
+    throw { code:'auth/account-suspended', message:'Your account has been suspended by an admin. Contact the school if you believe this is a mistake.' };
+  }
+  return {user:cred.user, profile};
+}
+async function getUserProfile(uid){
+  const snap = await getDoc(doc(db,'users',uid));
+  return snap.exists() ? snap.data() : null;
+}
+
+/* ---------- Listings data ---------- */
+async function getActiveListings(){
+  const q = query(collection(db,'listings'), where('status','==','active'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d=>withDistance({id:d.id,...d.data()}));
+}
+async function getListingById(id){
+  const snap = await getDoc(doc(db,'listings',id));
+  return snap.exists() ? withDistance({id:snap.id,...snap.data()}) : null;
+}
+async function getListingsByAgent(agentId){
+  const q = query(collection(db,'listings'), where('agentId','==',agentId));
+  const snap = await getDocs(q);
+  return snap.docs.map(d=>withDistance({id:d.id,...d.data()}));
+}
+async function createListing(agentId,data,photoFiles){
+  const photoUrls = photoFiles && photoFiles.length ? await uploadMultiple(photoFiles) : [];
+  const ref = await addDoc(collection(db,'listings'),{...data,agentId,photoUrls,status:'pending',createdAt:serverTimestamp()});
+  return ref.id;
+}
+async function updateListingDoc(id,data,newPhotoFiles){
+  const payload = {...data};
+  if (newPhotoFiles && newPhotoFiles.length) payload.photoUrls = await uploadMultiple(newPhotoFiles);
+  await updateDoc(doc(db,'listings',id),payload);
+}
+async function deleteListingDoc(id){ await deleteDoc(doc(db,'listings',id)); }
+
+/* ---------- Bookings (availability tracking — no payment involved) ---------- */
+async function createBooking(listing, student){
+  await addDoc(collection(db,'bookings'),{
+    listingId: listing.id, listingTitle: listing.title,
+    agentId: listing.agentId,
+    studentId: student.uid, studentName: student.name,
+    status: 'active', createdAt: serverTimestamp(),
+  });
+  await updateDoc(doc(db,'listings',listing.id), { availability: 'occupied' });
+}
+async function cancelBooking(bookingId, listingId){
+  await updateDoc(doc(db,'bookings',bookingId), { status: 'cancelled' });
+  await updateDoc(doc(db,'listings',listingId), { availability: 'available' });
+}
+async function getBookingsForStudent(studentId){
+  const q = query(collection(db,'bookings'), where('studentId','==',studentId), where('status','==','active'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d=>({id:d.id,...d.data()}));
+}
+async function getActiveBookingForListing(listingId){
+  const q = query(collection(db,'bookings'), where('listingId','==',listingId), where('status','==','active'));
+  const snap = await getDocs(q);
+  return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() };
+}
+
+/* ---------- Reviews ---------- */
+async function getAllReviews(){
+  const snap = await getDocs(collection(db,'reviews'));
+  return snap.docs.map(d=>({id:d.id,...d.data()}));
+}
+async function submitReview(listingId,{studentId,studentName,categories,comment,anonymous}){
+  const values = Object.values(categories);
+  const overall = Number((values.reduce((a,b)=>a+b,0)/values.length).toFixed(1));
+  await addDoc(collection(db,'reviews'),{listingId,studentId,studentName:anonymous?'Anonymous student':studentName,categories,overall,comment,anonymous:!!anonymous,createdAt:serverTimestamp()});
+  return overall;
+}
+async function getReviewsForListing(listingId){
+  const q = query(collection(db,'reviews'), where('listingId','==',listingId));
+  const snap = await getDocs(q);
+  return snap.docs.map(d=>({id:d.id,...d.data()}));
+}
+function summarizeReviews(reviews){
+  if(!reviews.length) return {count:0, overall:0, categoryAverages:{}};
+  const cats=['cleanliness','amenities','landlord','safety','value'];
+  const categoryAverages={};
+  cats.forEach(c=>{
+    const vals=reviews.map(r=>r.categories?.[c]).filter(v=>typeof v==='number');
+    categoryAverages[c]=vals.length?Number((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1)):0;
+  });
+  const overall=Number((reviews.reduce((a,r)=>a+(r.overall||0),0)/reviews.length).toFixed(1));
+  return {count:reviews.length, overall, categoryAverages};
+}
+
+/* ---------- Map helpers ---------- */
+const campusIcon = L.divIcon({className:'',html:`<div style="background:#2F5233;width:16px;height:16px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`,iconSize:[16,16],iconAnchor:[8,16]});
+const hostelIcon = L.divIcon({className:'',html:`<div style="background:#C1440E;width:14px;height:14px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`,iconSize:[14,14],iconAnchor:[7,14]});
+function initMap(elId,{center=CAMPUS,zoom=15}={}){
+  const map = L.map(elId).setView([center.lat,center.lng],zoom);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors',maxZoom:19}).addTo(map);
+  L.marker([CAMPUS.lat,CAMPUS.lng],{icon:campusIcon}).addTo(map).bindPopup(`<strong>${CAMPUS.name}</strong><br/>Campus`);
+  return map;
+}
+function plotListings(map,listings,onSelect){
+  const markers={};
+  listings.forEach(l=>{
+    const m = L.marker([l.lat,l.lng],{icon:hostelIcon}).addTo(map);
+    m.bindPopup(`<strong>${l.title}</strong><br/>₦${l.price.toLocaleString()} / ${l.period}<br/>${l.distanceKm} km from campus`);
+    m.on('click',()=>onSelect&&onSelect(l));
+    markers[l.id]=m;
+  });
+  return markers;
+}
+function clearMarkers(markers){ Object.values(markers).forEach(m=>m.remove()); }
+function enablePinPicker(map,onPick){
+  let marker=null;
+  map.on('click',e=>{
+    const {lat,lng}=e.latlng;
+    if(marker) marker.setLatLng(e.latlng); else marker=L.marker(e.latlng,{icon:hostelIcon}).addTo(map);
+    onPick(lat,lng);
+  });
+  return { setPosition(lat,lng){ const ll=[lat,lng]; if(marker) marker.setLatLng(ll); else marker=L.marker(ll,{icon:hostelIcon}).addTo(map); map.setView(ll,map.getZoom()); } };
+}
+
+/* ================= ROUTER ================= */
+let currentUser=null, currentProfile=null;
+let allListings=[], homeMarkers={}, homeMap=null, currentSort='distance', ratingMap={};
+let agentPickMap=null, agentPicker=null;
+
+const views = ['home','listing','login','agent','about','bookings'];
+function showView(name){
+  views.forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden', v!==name));
+}
+
+function parseHash(){
+  const raw = location.hash.slice(1) || 'home';
+  const [name, param] = raw.split(':');
+  return { name: views.includes(name) ? name : 'home', param };
+}
+
+async function router(){
+  const { name, param } = parseHash();
+  showView(name);
+  if (name==='home') await bootHome();
+  if (name==='listing') await bootListing(param);
+  if (name==='agent') await bootAgent();
+  if (name==='bookings') await bootBookings();
+}
+window.addEventListener('hashchange', router);
+
+/* ---------- Nav rendering (auth aware) ---------- */
+function renderNav(){
+  const nav = document.getElementById('nav-links');
+  if(!currentUser){
+    nav.innerHTML = `<a href="#home">Explore</a><a href="#about">About</a><a href="#login" class="nav-cta">Sign in</a>`;
+    return;
+  }
+  if(currentProfile?.role==='admin'){
+    nav.innerHTML = `<a href="#home">Explore</a><a href="admin.html">Admin panel</a><a href="#" id="logout-link" class="nav-cta">Log out</a>`;
+  } else if(currentProfile?.role==='agent'){
+    nav.innerHTML = `<a href="#home">Explore</a><a href="#agent">My listings</a><a href="#" id="logout-link" class="nav-cta">Log out</a>`;
+  } else {
+    nav.innerHTML = `<a href="#home">Explore</a><a href="#bookings">My bookings</a><a href="#about">About</a><a href="#" id="logout-link" class="nav-cta">Log out</a>`;
+  }
+  document.getElementById('logout-link').addEventListener('click', async e=>{ e.preventDefault(); await signOut(auth); location.hash='#home'; });
+}
+onAuthStateChanged(auth, async (user)=>{
+  if(user){
+    const profile = await getUserProfile(user.uid);
+    if(profile?.suspended){
+      await signOut(auth);
+      currentUser=null; currentProfile=null;
+      renderNav();
+      alert('Your account has been suspended by an admin.');
+      location.hash='#home';
+      return;
+    }
+  }
+  currentUser = user;
+  currentProfile = user ? await getUserProfile(user.uid) : null;
+  renderNav();
+  const { name } = parseHash();
+  if (name==='agent') router();
+});
+
+/* ---------- HOME VIEW ---------- */
+async function bootHome(){
+  if(!homeMap){
+    homeMap = initMap('map');
+    document.getElementById('search-form').addEventListener('submit', e=>{e.preventDefault(); renderListings();});
+    ['q','type','budget','gender'].forEach(id=>document.getElementById(id).addEventListener('change', renderListings));
+    document.getElementById('filter-bar').addEventListener('click', e=>{
+      const btn=e.target.closest('.chip'); if(!btn) return;
+      document.querySelectorAll('#filter-bar .chip').forEach(c=>c.classList.remove('active'));
+      btn.classList.add('active'); currentSort=btn.dataset.sort; renderListings();
+    });
+  }
+  try{
+    allListings = await getActiveListings();
+    document.getElementById('pin-count').textContent = `${allListings.length} accommodation option${allListings.length===1?'':'s'} mapped`;
+    const allReviews = await getAllReviews();
+    ratingMap = {};
+    allListings.forEach(l=>{
+      ratingMap[l.id] = summarizeReviews(allReviews.filter(r=>r.listingId===l.id));
+    });
+    renderListings();
+  }catch(err){
+    console.error(err);
+    document.getElementById('listing-list').innerHTML = `<div class="empty-state"><div class="glyph">!</div>Couldn't load listings — check Firestore is set up.</div>`;
+  }
+}
+function applyFilters(){
+  const qv=document.getElementById('q').value.trim().toLowerCase();
+  const type=document.getElementById('type').value;
+  const budget=Number(document.getElementById('budget').value)||Infinity;
+  const gender=document.getElementById('gender').value;
+  let list = allListings.filter(l=>{
+    const mq=!qv||(l.title+' '+l.address+' '+(l.description||'')).toLowerCase().includes(qv);
+    const mt=!type||l.type===type; const mb=l.price<=budget; const mg=!gender||l.gender===gender;
+    return mq&&mt&&mb&&mg;
+  });
+  if(currentSort==='distance') list.sort((a,b)=>a.distanceKm-b.distanceKm);
+  if(currentSort==='price-asc') list.sort((a,b)=>a.price-b.price);
+  if(currentSort==='price-desc') list.sort((a,b)=>b.price-a.price);
+  return list;
+}
+function renderListings(){
+  const list = applyFilters();
+  document.getElementById('result-count').textContent = list.length===allListings.length ? 'Showing all accommodation near campus' : `${list.length} accommodation option${list.length===1?'':'s'} match your search`;
+  clearMarkers(homeMarkers);
+  homeMarkers = plotListings(homeMap, list, l=>highlightCard(l.id));
+  const container = document.getElementById('listing-list');
+  if(!list.length){ container.innerHTML=`<div class="empty-state"><div class="glyph">—</div>No accommodation matches those filters yet.</div>`; return; }
+  container.innerHTML = list.map(l=>{
+    const r = ratingMap[l.id];
+    const ratingHtml = r && r.count ? `<span class="tag" style="color:var(--accent);border-color:var(--accent-tint)">★ ${r.overall} (${r.count})</span>` : `<span class="tag">New</span>`;
+    const availHtml = l.availability==='occupied' ? `<span class="tag" style="background:var(--accent-tint);color:var(--accent);border:none">Occupied</span>` : `<span class="tag" style="background:var(--primary-tint);color:var(--primary);border:none">Available</span>`;
+    return `
+    <a class="card" data-id="${l.id}" href="#listing:${l.id}">
+      <div class="card-media">${l.photoUrls?.[0]?`<img src="${l.photoUrls[0]}" alt="${l.title}"/>`:'PHOTO'}</div>
+      <div class="card-body">
+        <div class="card-top"><h3>${l.title}</h3><span class="price">₦${l.price.toLocaleString()}<br/><small style="font-weight:400;color:var(--ink-faint)">/ ${l.period}</small></span></div>
+        <div class="meta">${ratingHtml} ${availHtml}<span class="tag">${l.type}</span><span class="tag">${l.gender}</span><span class="tag dist-tag">${l.distanceKm} km from campus</span></div>
+      </div>
+    </a>`;
+  }).join('');
+}
+function highlightCard(id){
+  document.querySelectorAll('.card').forEach(c=>c.classList.remove('highlighted'));
+  const card=document.querySelector(`.card[data-id="${id}"]`);
+  if(card){ card.classList.add('highlighted'); card.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+  homeMarkers[id]?.openPopup();
+}
+
+/* ---------- LISTING DETAIL VIEW ---------- */
+async function bootListing(id){
+  const el = document.getElementById('listing-content');
+  el.innerHTML = '<p>Loading listing…</p>';
+  if(!id){ el.innerHTML='<div class="empty-state">No listing specified.</div>'; return; }
+  const l = await getListingById(id);
+  if(!l){ el.innerHTML='<div class="empty-state">Listing not found.</div>'; return; }
+  el.innerHTML = `
+    <div class="detail-layout">
+      <div>
+        <div class="detail-gallery">${l.photoUrls?.[0]?`<img src="${l.photoUrls[0]}" alt="${l.title}"/>`:'No photos uploaded yet'}</div>
+        <h1 class="detail-title">${l.title}</h1>
+        <div class="detail-price">₦${l.price.toLocaleString()} / ${l.period}</div>
+        <div class="detail-meta"><span class="tag">${l.type}</span><span class="tag">${l.gender}</span><span class="tag dist-tag">${l.distanceKm} km from campus</span> <span class="tag" style="${l.availability==='occupied'?'background:var(--accent-tint);color:var(--accent);border:none':'background:var(--primary-tint);color:var(--primary);border:none'}">${l.availability==='occupied'?'Occupied':'Available'}</span></div>
+        <p>${l.description||''}</p>
+        <h3 style="font-family:var(--font-display);margin-top:22px;margin-bottom:8px">Amenities</h3>
+        <ul class="amenity-grid">${(l.amenities||[]).map(a=>`<li>${a}</li>`).join('')||'<li style="opacity:.6">None listed</li>'}</ul>
+        <h3 style="font-family:var(--font-display);margin:28px 0 10px">Reviews</h3>
+        <div id="review-summary"></div>
+        <div id="review-list" style="display:grid;gap:10px;margin:14px 0 24px"></div>
+        <div id="review-form-mount"></div>
+      </div>
+      <aside class="detail-side">
+        <div id="detail-map"></div>
+        <div class="contact-card" id="booking-card" style="margin-bottom:14px"></div>
+        <div class="contact-card">
+          <h3 style="font-family:var(--font-display);margin-bottom:8px">Contact</h3>
+          <p style="margin-bottom:4px"><strong>${l.address}</strong></p>
+          <p style="color:var(--ink-soft);font-size:.88rem;margin-bottom:14px">Booking here only reserves the room in the system \u2014 no payment is handled through this site. Arrange payment directly with the agent.</p>
+          <a class="btn-primary" style="display:block;text-align:center" href="https://www.openstreetmap.org/?mlat=${l.lat}&mlon=${l.lng}#map=17/${l.lat}/${l.lng}" target="_blank" rel="noopener">Open in maps</a>
+        </div>
+      </aside>
+    </div>`;
+  const dm = initMap('detail-map', {center:l, zoom:15});
+  plotListings(dm,[l]);
+  await renderBookingCard(l);
+  const reviews = await getReviewsForListing(id);
+  renderReviews(reviews);
+  renderReviewForm(id);
+}
+async function renderBookingCard(l){
+  const mount = document.getElementById('booking-card');
+  const activeBooking = l.availability==='occupied' ? await getActiveBookingForListing(l.id) : null;
+
+  if(currentProfile?.role==='agent' || currentProfile?.role==='admin'){
+    mount.innerHTML = `<p style="color:var(--ink-faint);font-size:.88rem">Booking status: <strong style="color:${l.availability==='occupied'?'var(--accent)':'var(--primary)'}">${l.availability==='occupied'?'Occupied':'Available'}</strong></p>`;
+    return;
+  }
+  if(l.availability!=='occupied'){
+    if(!currentUser){
+      mount.innerHTML = `<p style="color:var(--primary);font-weight:600;margin-bottom:8px">Available now</p><a href="#login" style="color:var(--primary);font-weight:600;font-size:.88rem">Sign in as a student to book this accommodation →</a>`;
+      return;
+    }
+    if(currentProfile?.role!=='student'){
+      mount.innerHTML = `<p style="color:var(--primary);font-weight:600">Available now</p>`;
+      return;
+    }
+    mount.innerHTML = `<p style="color:var(--primary);font-weight:600;margin-bottom:10px">Available now</p><button class="btn-primary" id="book-btn" style="width:100%">Book this accommodation</button><p style="font-size:.76rem;color:var(--ink-faint);margin-top:8px">This just reserves it in the system — no payment happens here.</p>`;
+    document.getElementById('book-btn').addEventListener('click', async ()=>{
+      if(!confirm('Book this accommodation? It will be marked occupied and hidden from other students until you cancel.')) return;
+      await createBooking(l, { uid: currentUser.uid, name: currentProfile.name });
+      const updated = await getListingById(l.id);
+      renderBookingCard(updated);
+      document.querySelector('.detail-meta .tag:last-child').outerHTML = `<span class="tag" style="background:var(--accent-tint);color:var(--accent);border:none">Occupied</span>`;
+    });
+    return;
+  }
+  // Occupied
+  if(activeBooking && currentUser && activeBooking.studentId===currentUser.uid){
+    mount.innerHTML = `<p style="color:var(--accent);font-weight:600;margin-bottom:10px">You booked this accommodation</p><button class="btn-ghost" id="cancel-book-btn" style="width:100%">Cancel my booking</button>`;
+    document.getElementById('cancel-book-btn').addEventListener('click', async ()=>{
+      if(!confirm('Cancel this booking? The accommodation will become available to other students again.')) return;
+      await cancelBooking(activeBooking.id, l.id);
+      const updated = await getListingById(l.id);
+      renderBookingCard(updated);
+      document.querySelector('.detail-meta .tag:last-child').outerHTML = `<span class="tag" style="background:var(--primary-tint);color:var(--primary);border:none">Available</span>`;
+    });
+  } else {
+    mount.innerHTML = `<p style="color:var(--accent);font-weight:600">Currently occupied</p><p style="font-size:.85rem;color:var(--ink-soft);margin-top:6px">Check back later, or contact the agent to be notified if it opens up.</p>`;
+  }
+}
+function renderReviews(reviews){
+  const s = summarizeReviews(reviews);
+  document.getElementById('review-summary').innerHTML = reviews.length ? `
+    <div class="card" style="cursor:default;padding:14px;display:flex;gap:22px;align-items:center;flex-wrap:wrap">
+      <div><div style="font-family:var(--font-display);font-size:1.8rem;color:var(--accent)">${s.overall}★</div><div style="font-size:.78rem;color:var(--ink-faint)">${s.count} review${s.count===1?'':'s'}</div></div>
+      <div style="display:grid;gap:4px;font-size:.83rem;flex:1;min-width:200px">
+        ${Object.entries(s.categoryAverages).map(([k,v])=>`<div style="display:flex;justify-content:space-between;gap:10px"><span style="text-transform:capitalize;color:var(--ink-soft)">${k}</span><span style="font-family:var(--font-mono)">${v||'–'}</span></div>`).join('')}
+      </div>
+    </div>` : `<p style="color:var(--ink-faint)">No reviews yet — be the first to rate this place.</p>`;
+  document.getElementById('review-list').innerHTML = reviews.map(r=>`
+    <div class="card" style="cursor:default;padding:13px 15px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px"><strong>${r.studentName}</strong><span style="font-family:var(--font-mono);color:var(--accent)">${r.overall}★</span></div>
+      <p style="font-size:.88rem;color:var(--ink-soft)">${r.comment||''}</p>
+    </div>`).join('');
+}
+function renderReviewForm(listingId){
+  const mount = document.getElementById('review-form-mount');
+  if(!currentUser){ mount.innerHTML = `<p style="color:var(--ink-faint)"><a href="#login" style="color:var(--primary);font-weight:600">Sign in as a student</a> to leave a review.</p>`; return; }
+  if(currentProfile?.role!=='student'){ mount.innerHTML = `<p style="color:var(--ink-faint)">Only student accounts can leave reviews.</p>`; return; }
+  const cats=['cleanliness','amenities','landlord','safety','value'];
+  mount.innerHTML = `
+    <form class="form-card" id="review-form" style="max-width:500px">
+      <div class="form-grid">
+        <h4 style="font-family:var(--font-display)">Rate your nest</h4>
+        ${cats.map(c=>`<div><label style="text-transform:capitalize">${c}</label><div class="star-row" data-cat="${c}" style="display:flex;gap:6px;font-size:1.3rem">${[1,2,3,4,5].map(n=>`<span data-val="${n}" style="color:var(--line)">★</span>`).join('')}</div></div>`).join('')}
+        <div><label>Comments</label><textarea id="r-comment" maxlength="300" placeholder="Share your experience…" style="min-height:70px"></textarea></div>
+        <label style="display:flex;align-items:center;gap:8px;font-weight:400"><input type="checkbox" id="r-anon" style="width:auto"/> Post anonymously</label>
+        <button type="submit" class="btn-primary">Submit rating</button>
+      </div>
+    </form>`;
+  const ratings={};
+  mount.querySelectorAll('.star-row').forEach(row=>{
+    row.addEventListener('click', e=>{
+      const val=e.target.dataset.val; if(!val) return;
+      ratings[row.dataset.cat]=Number(val);
+      [...row.children].forEach(star=>{ star.style.color = Number(star.dataset.val)<=val ? 'var(--accent)' : 'var(--line)'; });
+    });
+  });
+  document.getElementById('review-form').addEventListener('submit', async e=>{
+    e.preventDefault();
+    if(cats.some(c=>!ratings[c])){ alert('Please rate all five categories.'); return; }
+    await submitReview(listingId,{studentId:currentUser.uid, studentName:currentProfile.name, categories:ratings, comment:document.getElementById('r-comment').value, anonymous:document.getElementById('r-anon').checked});
+    const reviews = await getReviewsForListing(listingId);
+    renderReviews(reviews);
+    mount.innerHTML = `<div class="banner success">Thanks — your review is posted.</div>`;
+  });
+}
+
+/* ---------- LOGIN / REGISTER VIEW ---------- */
+function switchTab(tab){
+  document.querySelectorAll('#tab-bar .chip').forEach(c=>c.classList.toggle('active', c.dataset.tab===tab));
+  document.querySelectorAll('[data-panel]').forEach(p=>{ p.hidden = p.dataset.panel!==tab; });
+}
+document.getElementById('tab-bar').addEventListener('click', e=>{ const b=e.target.closest('.chip'); if(b) switchTab(b.dataset.tab); });
+function authBanner(msg,type='error'){ document.getElementById('auth-banner').innerHTML = `<div class="banner ${type}">${msg}</div>`; }
+function friendlyError(err){
+  const code = err?.code || '';
+  if(code.includes('email-already-in-use')) return 'That email is already registered — try signing in instead.';
+  if(code.includes('weak-password')) return 'Password should be at least 6 characters.';
+  if(code.includes('invalid-credential')||code.includes('wrong-password')||code.includes('user-not-found')) return 'Incorrect email or password.';
+  return err?.message || 'Something went wrong. Please try again.';
+}
+document.getElementById('login-form').addEventListener('submit', async e=>{
+  e.preventDefault();
+  try{
+    const {profile} = await loginUser(document.getElementById('login-email').value, document.getElementById('login-password').value);
+    location.hash = profile?.role==='agent' ? '#agent' : '#home';
+  }catch(err){ authBanner(friendlyError(err)); }
+});
+document.getElementById('student-form').addEventListener('submit', async e=>{
+  e.preventDefault();
+  try{
+    await registerStudent({name:document.getElementById('s-name').value, matricNumber:document.getElementById('s-matric').value, email:document.getElementById('s-email').value, password:document.getElementById('s-password').value});
+    authBanner('Account created! Redirecting…','success');
+    setTimeout(()=>location.hash='#home', 800);
+  }catch(err){ authBanner(friendlyError(err)); }
+});
+document.getElementById('agent-form').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const billFile = document.getElementById('a-bill').files[0];
+  try{
+    await registerAgent({name:document.getElementById('a-name').value, phone:document.getElementById('a-phone').value, company:document.getElementById('a-company').value, email:document.getElementById('a-email').value, password:document.getElementById('a-password').value, billFile});
+    authBanner('Account created! Your documents are pending admin review. Redirecting…','success');
+    setTimeout(()=>location.hash='#agent', 1000);
+  }catch(err){ authBanner(friendlyError(err)); }
+});
+
+/* ---------- AGENT PORTAL VIEW ---------- */
+/* ---------- MY BOOKINGS VIEW (students) ---------- */
+async function bootBookings(){
+  const el = document.getElementById('bookings-content');
+  if(!currentUser){ location.hash='#login'; return; }
+  if(currentProfile?.role!=='student'){
+    el.innerHTML = `<div class="empty-state">Only student accounts have bookings.</div>`;
+    return;
+  }
+  el.innerHTML = '<p>Loading…</p>';
+  const bookings = await getBookingsForStudent(currentUser.uid);
+  if(!bookings.length){
+    el.innerHTML = `<div class="empty-state"><div class="glyph">—</div>You haven't booked any accommodation yet. <a href="#home" style="color:var(--primary);font-weight:600">Browse listings →</a></div>`;
+    return;
+  }
+  el.innerHTML = bookings.map(b=>`
+    <div class="card" style="cursor:default;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+      <div>
+        <h3 style="font-family:var(--font-display);margin-bottom:4px"><a href="#listing:${b.listingId}" style="color:var(--ink)">${b.listingTitle}</a></h3>
+        <p style="font-size:.85rem;color:var(--ink-soft)">Reserved in the system — arrange payment directly with the agent.</p>
+      </div>
+      <button class="icon-btn danger" data-cancel="${b.id}" data-listing="${b.listingId}">Cancel booking</button>
+    </div>`).join('');
+  el.querySelectorAll('[data-cancel]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if(!confirm('Cancel this booking? The accommodation becomes available to other students again.')) return;
+      await cancelBooking(btn.dataset.cancel, btn.dataset.listing);
+      bootBookings();
+    });
+  });
+}
+
+async function bootAgent(){
+  if(!currentUser){ location.hash='#login'; return; }
+  if(currentProfile?.role!=='agent'){ alert('This page is for agents only.'); location.hash='#home'; return; }
+  const statusEl = document.getElementById('verify-status');
+  statusEl.innerHTML = currentProfile.verified
+    ? `<span style="color:var(--primary);font-weight:600">✓ Verified agent</span> — new listings go live after a quick admin glance.`
+    : `<span style="color:var(--accent);font-weight:600">Pending verification</span> — an admin is reviewing your utility bill. You can add listings, but they won't appear publicly until you're verified.`;
+  if(!agentPickMap){
+    agentPickMap = initMap('pin-map', {zoom:14});
+    agentPicker = enablePinPicker(agentPickMap, (lat,lng)=>{ document.getElementById('l-lat').value=lat.toFixed(5); document.getElementById('l-lng').value=lng.toFixed(5); });
+  }
+  await refreshAgentTable();
+}
+async function refreshAgentTable(){
+  const listings = await getListingsByAgent(currentUser.uid);
+  const body = document.getElementById('agent-listings-body');
+  if(!listings.length){ body.innerHTML='<tr><td colspan="6">No listings yet — add your first one above.</td></tr>'; return; }
+  const badge = s => ({pending:'<span style="color:var(--accent)">Pending review</span>', active:'<span style="color:var(--primary)">Active</span>', rejected:'<span style="color:#999">Rejected</span>'}[s]||s);
+  const availBadge = a => a==='occupied' ? '<span style="color:var(--accent)">Occupied</span>' : '<span style="color:var(--primary)">Available</span>';
+  body.innerHTML = listings.map(l=>`
+    <tr><td>${l.title}</td><td>₦${l.price.toLocaleString()}</td><td>${badge(l.status)}</td>
+    <td>${availBadge(l.availability)} <button class="icon-btn" data-toggle-avail="${l.id}" data-current="${l.availability||'available'}">${l.availability==='occupied'?'Mark available':'Mark occupied'}</button></td>
+    <td>${l.distanceKm} km</td>
+    <td><button class="icon-btn" data-edit="${l.id}">Edit</button><button class="icon-btn danger" data-del="${l.id}">Delete</button></td></tr>`).join('');
+  body.querySelectorAll('[data-edit]').forEach(btn=>btn.addEventListener('click', ()=>loadForEdit(listings.find(l=>l.id===btn.dataset.edit))));
+  body.querySelectorAll('[data-del]').forEach(btn=>btn.addEventListener('click', async ()=>{
+    if(!confirm('Delete this listing? This cannot be undone.')) return;
+    await deleteListingDoc(btn.dataset.del); refreshAgentTable();
+  }));
+  body.querySelectorAll('[data-toggle-avail]').forEach(btn=>btn.addEventListener('click', async ()=>{
+    const next = btn.dataset.current==='occupied' ? 'available' : 'occupied';
+    await updateListingDoc(btn.dataset.toggleAvail, { availability: next }, []);
+    refreshAgentTable();
+  }));
+}
+function loadForEdit(l){
+  document.getElementById('editing-id').value=l.id;
+  document.getElementById('l-title').value=l.title;
+  document.getElementById('l-price').value=l.price;
+  document.getElementById('l-type').value=l.type;
+  document.getElementById('l-gender').value=l.gender;
+  document.getElementById('l-availability').value=l.availability||'available';
+  document.getElementById('l-address').value=l.address;
+  document.getElementById('l-lat').value=l.lat;
+  document.getElementById('l-lng').value=l.lng;
+  document.getElementById('l-amenities').value=(l.amenities||[]).join(', ');
+  document.getElementById('l-desc').value=l.description||'';
+  agentPicker.setPosition(l.lat,l.lng);
+  document.getElementById('cancel-edit').hidden=false;
+  document.getElementById('save-btn').textContent='Update listing';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function resetAgentForm(){
+  document.getElementById('listing-form').reset();
+  document.getElementById('editing-id').value='';
+  document.getElementById('cancel-edit').hidden=true;
+  document.getElementById('save-btn').textContent='Save listing';
+}
+document.getElementById('cancel-edit').addEventListener('click', resetAgentForm);
+document.getElementById('listing-form').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const id = document.getElementById('editing-id').value;
+  const data = {
+    title: document.getElementById('l-title').value,
+    price: Number(document.getElementById('l-price').value),
+    period: 'session',
+    type: document.getElementById('l-type').value,
+    gender: document.getElementById('l-gender').value,
+    availability: document.getElementById('l-availability').value,
+    address: document.getElementById('l-address').value,
+    lat: Number(document.getElementById('l-lat').value),
+    lng: Number(document.getElementById('l-lng').value),
+    amenities: document.getElementById('l-amenities').value.split(',').map(s=>s.trim()).filter(Boolean),
+    description: document.getElementById('l-desc').value,
+  };
+  const photoFiles = Array.from(document.getElementById('l-photos').files);
+  try{
+    if(id) await updateListingDoc(id,data,photoFiles); else await createListing(currentUser.uid,data,photoFiles);
+    document.getElementById('agent-banner').innerHTML = `<div class="banner success">Listing saved.</div>`;
+    resetAgentForm(); refreshAgentTable();
+  }catch(err){ document.getElementById('agent-banner').innerHTML = `<div class="banner error">${err.message}</div>`; }
+});
+
+/* ---------- Mobile menu toggle ---------- */
+document.getElementById('menu-toggle').addEventListener('click', ()=>{
+  document.getElementById('nav-links').classList.toggle('open');
+});
+document.getElementById('nav-links').addEventListener('click', e=>{
+  if(e.target.tagName==='A') document.getElementById('nav-links').classList.remove('open');
+});
+window.addEventListener('hashchange', ()=>document.getElementById('nav-links').classList.remove('open'));
+
+/* ---------- Boot ---------- */
+router();
+</script>
+</body>
+</html>
